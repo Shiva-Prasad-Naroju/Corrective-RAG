@@ -43,31 +43,57 @@ Here’s the actual workflow of **Corrective-RAG**:
 
 Corrective-RAG/
 │
+
 ├── main.py # Main entry point (runs workflow)
+
 │
+
 ├── data/
+
 │ └── loaders.py # Load raw documents
+
 │
+
 ├── retriever/
+
 │ ├── vectorstore.py # Build & load FAISS vectorstore
+
 │ └── retrieval.py # Retriever configuration
+
 │
+
 ├── llm/
+
 │ ├── grader.py # Retrieval grader agent
+
 │ ├── generator.py # RAG generator chain
+
 │ └── rewriter.py # Query transformer agent
+
 │
+
 ├── workflow/
+
 │ └── graph.py # Graph workflow definition
+
 │
+
 ├── utils/
+
 │ └── formatting.py # Pretty output formatting
+
 │
+
 ├── config # ALl the config files urls, GROQ api.
+
 │  
+
 ├── entire_pipeline 
+
 │  └── Corrective_RAG.py # All the complete code lies at this single file
+
 |
+
 └── vectorstore_index/ # Saved FAISS index (persistent)
 
 

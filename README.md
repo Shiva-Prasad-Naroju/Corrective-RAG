@@ -155,6 +155,27 @@ rag_system = CorrectiveRAG(
 - **[DuckDuckGo Search](https://pypi.org/project/duckduckgo-search/)** - Privacy-focused web search
 
 
+## 🐳 Docker Deployment
+
+### **Containerized for Production**
+
+This project has been **fully containerized** and deployed to Docker Hub for instant, hassle-free deployment across any environment. The Docker image includes all dependencies, optimized configurations, and production-ready setup.
+
+**Ready-to-use Docker Image:**
+```bash
+docker pull shivaprasadnaroju/corrective-rag:latest
+```
+
+### **Key Docker Features**
+- ✅ **One-command deployment** - Zero configuration required
+- ✅ **Production optimized** - Multi-stage build with minimal image size
+- ✅ **Environment isolation** - Clean, reproducible runtime environment
+- ✅ **Cross-platform support** - Works on any Docker-enabled system
+- ✅ **Persistent storage** - Volume mounting for vectorstore data
+
+**Docker Hub Repository:** `shivaprasadnaroju/corrective-rag:latest`  
+**Image ID:** `8013f3b91b9b`
+
 ## ⚙️ Configuration
 
 ### 🎛️ **Model Parameters**

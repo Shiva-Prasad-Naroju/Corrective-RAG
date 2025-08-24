@@ -1,0 +1,15 @@
+# Ignore virtual environments
+.venv
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore local configs & cache
+*.log
+*.lock
+*.db
+.env
+
+# Ignore output files
+output_flow/
+vectorstore_index/

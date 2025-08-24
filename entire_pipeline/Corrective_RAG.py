@@ -1,54 +1,57 @@
-### Corrective RAG
+# ----- CORRECTIVE RAG -----
 import os
 from dotenv import load_dotenv
 load_dotenv()
+
 GROQ_API_KEY=os.getenv("GROQ_API_KEY")
+
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-# Docs to index
+
+# ----- Docs to index -----
 urls = [
     "https://lilianweng.github.io/posts/2023-06-23-agent/",
     "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
     "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
 ]
 
-# Load
+# ----- Load -----
 docs = [WebBaseLoader(url).load() for url in urls]
 docs_list = [item for sublist in docs for item in sublist]
 
-# Splitting the chunks
+# ----- Splitting the chunks -----
 text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
     chunk_size=500, chunk_overlap=0
 )
 
 doc_splits = text_splitter.split_documents(docs_list)
 
-# Add to vectorstore
+# ----- Add to vectorstore -----
 vectorstore=FAISS.from_documents(
     documents=doc_splits,
     embedding=embeddings
 )
-
 retriever = vectorstore.as_retriever()
-# Retrieval Grader:
+
+# ----- Retrieval Grader -----
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 from langchain_groq import ChatGroq
 
-# Data Model
+# ----- Data Model -----
 class GradeDocuments(BaseModel):
     """Binary score for relevance check on retrieved documents."""
 
     binary_score: str = Field(description="Documents are relevant to the question, 'yes' or 'no'")
 
-# LLM with function call:
+# ----- LLM with function call -----
 llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0.0, api_key=GROQ_API_KEY)
 structured_llm_grader = llm.with_structured_output(GradeDocuments) # Outputs relevance score Yes or No
 
-# Prompt
+# ----- Prompt -----
 system = """You are a grader assessing relevance of a retrieved document to a user question. \n 
     If the document contains keyword(s) or semantic meaning related to the question, grade it as relevant. \n
     Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question."""
@@ -59,17 +62,17 @@ grade_prompt = ChatPromptTemplate.from_messages(
         ("human", "Retrieved document: \n\n {document} \n\n User question: {question}"),
     ]
 )
-##chain the prompt with the LLM
+
+# ----- Chain the prompt with the LLM -----
 retrieval_grader = grade_prompt | structured_llm_grader
 
 question = "AI Agents"
-
 docs = retriever.invoke(question)
-
 doc_txt = docs[1].page_content
-print(retrieval_grader.invoke({"question": question, "document": doc_txt}))
-### Generate
 
+# print(retrieval_grader.invoke({"question": question, "document": doc_txt}))
+
+# ----- Generate -----
 from langchain import hub
 from langchain_core.output_parsers import StrOutputParser
 
@@ -79,11 +82,9 @@ prompt = hub.pull("rlm/rag-prompt")
 # LLM
 llm = llm
 
-
 # Post-processing
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
-
 
 # Chain
 rag_chain = prompt | llm | StrOutputParser()
@@ -91,7 +92,8 @@ rag_chain = prompt | llm | StrOutputParser()
 # Run
 generation = rag_chain.invoke({"context": docs, "question": question})
 print(generation)
-### Question Re-writer
+
+# ----- Question Re-writer -----
 
 # LLM
 llm = llm
@@ -109,19 +111,17 @@ re_write_prompt = ChatPromptTemplate.from_messages(
         ),
     ]
 )
-
 question_rewriter = re_write_prompt | llm | StrOutputParser()
 question_rewriter.invoke({"question": question})
-# Search
 
+# ----- Search -----
 from langchain_community.tools import DuckDuckGoSearchResults
-
 web_search_tool = DuckDuckGoSearchResults(k=3)
-from typing import List
 
+from typing import List
 from typing_extensions import TypedDict
 
-
+# ----- State -----
 class GraphState(TypedDict):
     """
     Represents the state of our graph.
@@ -137,8 +137,10 @@ class GraphState(TypedDict):
     generation: str
     web_search: str
     documents: List[str]
+
 from langchain.schema import Document
 
+# ----- Retrieve function -----
 def retrieve(state):
     """
     Retrieve documents
@@ -157,6 +159,7 @@ def retrieve(state):
     return {"documents": documents, "question": question}
 
 
+# ----- Generate function -----
 def generate(state):
     """
     Generate answer
@@ -176,6 +179,7 @@ def generate(state):
     return {"documents": documents, "question": question, "generation": generation}
 
 
+# ----- Grade document function -----
 def grade_documents(state):
     """
     Determines whether the retrieved documents are relevant to the question.
@@ -209,6 +213,7 @@ def grade_documents(state):
     return {"documents": filtered_docs, "question": question, "web_search": web_search}
 
 
+# ----- Transform / Rewrite Query function -----
 def transform_query(state):
     """
     Transform the query to produce a better question.
@@ -229,8 +234,7 @@ def transform_query(state):
     return {"documents": documents, "question": better_question}
 
 
-from langchain.schema import Document
-
+# ----- Web Search function -----
 def web_search(state):
     """
     Web search based on the re-phrased question.
@@ -268,6 +272,8 @@ def web_search(state):
 
 
 ### Edges
+
+# ----- Decides to Generate or Rewrite the query - Function -----
 def decide_to_generate(state):
     """
     Determines whether to generate an answer, or re-generate a question.
@@ -295,17 +301,19 @@ def decide_to_generate(state):
         # We have relevant documents, so generate answer
         print("---DECISION: GENERATE---")
         return "generate"
-### Graph Building
+    
+
+# ----- Graph Building -----
 from langgraph.graph import END, StateGraph, START
 
 workflow = StateGraph(GraphState)
 
 # Define the nodes
-workflow.add_node("retrieve", retrieve)  # retrieve
-workflow.add_node("grade_documents", grade_documents)  # grade documents
-workflow.add_node("generate", generate)  # generate
-workflow.add_node("transform_query", transform_query)  # transform_query
-workflow.add_node("web_search_node", web_search)  # web search
+workflow.add_node("retrieve", retrieve)                 # retrieve
+workflow.add_node("grade_documents", grade_documents)   # grade documents
+workflow.add_node("generate", generate)                 # generate
+workflow.add_node("transform_query", transform_query)   # transform_query
+workflow.add_node("web_search_node", web_search)        # web search
 
 # Build graph
 workflow.add_edge(START, "retrieve")
@@ -324,11 +332,15 @@ workflow.add_edge("generate", END)
 
 # Compile
 app = workflow.compile()
+
+
+# ----- Displaying the workflow image -----
 from IPython.display import Image, display
 display(Image(app.get_graph(xray=True).draw_mermaid_png()))
+
+# ----- Invoking the workflow -----
 app.invoke({"question":"What are the types of agent memory?"})
-from langchain.schema import Document
-import pprint
+
 
 def print_readable_output(output):
     print("\n--- QUESTION ---")
@@ -354,4 +366,19 @@ def print_readable_output(output):
             print(f"  page_content (snippet):\n{snippet}\n  ...")
         else:
             print(f"  {doc}")  # fallback
+
+
+
+# ----- Printing in the human readable format -----            
 print_readable_output(app.invoke({"question":"What are the types of agent memory?"}))
+
+
+
+
+
+
+
+
+
+
+

@@ -219,17 +219,3 @@ CUSTOM_URLS = [
 - 🏢 **Enterprise** - Internal knowledge management
 
 ---
-
-<div align="center">
-
-## 🌟 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/corrective-rag&type=Date)](https://star-history.com/#yourusername/corrective-rag&Date)
-
-**[⭐ Star this repo](https://github.com/yourusername/corrective-rag)** if it helped you build better AI systems!
-
----
-
-*Making RAG systems more intelligent, one correction at a time.*
-
-</div>
